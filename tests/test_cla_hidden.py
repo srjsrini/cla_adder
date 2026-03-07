@@ -92,8 +92,8 @@ async def test_cla_complete_validation(dut):
 # Pytest Runner
 # =============================================================================
 
-def test_cla_runner():
-
+def test_cla_hidden_runner():
+    """Pytest wrapper required by HUD/cocotb_tools.runner for test discovery."""
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent

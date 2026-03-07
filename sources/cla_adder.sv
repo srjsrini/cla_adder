@@ -15,10 +15,12 @@ module cpu_wb_cla_adder #(
     logic [DATA_WID:0]   carry_tmp;
 
     // BUG: Hardcoded to 0. Passes if carry_in is 0, fails if 1.
+    assign carry_tmp[0] = 1'b0;
+
     generate
-    // TODO: Implement Generate/Propagate logic and Sum calculation here
+// TODO: Implement Generate/Propagate logic and Sum calculation here
     endgenerate
 
     assign carry_out = carry_tmp[DATA_WID];
-    assign carry_tmp[0] = 1'b0;
-    endmodule
+
+endmodule
