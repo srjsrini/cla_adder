@@ -1,0 +1,1 @@
+Complete the implementation of the 32-bit Carry Look-Ahead (CLA) adder in sources/cla_adder.sv. The module must calculate the 'sum' and 'carry_out' using parallel carry-lookahead logic (Generate and Propagate). Ensure the carry chain correctly handles the 'carry_in' bit. The logic must be purely combinational.
