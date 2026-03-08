@@ -1,116 +1,107 @@
 import cocotb
-import os
-import random
-from pathlib import Path
 from cocotb.triggers import Timer
-from cocotb_tools.runner import get_runner
+import random
+import os
+from pathlib import Path
+
+DATA_WID = 32
 
 
-# =============================================================================
-# Cocotb Test: CLA Validation
-# =============================================================================
+# -------------------------------------------------
+# Anti-cheat check (prevents trivial '+' solutions)
+# -------------------------------------------------
+proj_path = Path(__file__).resolve().parent.parent
 
+with open(proj_path / "sources/cla_adder.sv") as f:
+    code = f.read()
+
+assert "generate" in code, "Design must use generate logic"
+
+
+# -------------------------------------------------
+# Helper function for verification
+# -------------------------------------------------
+async def verify_add(dut, a, b, cin, name):
+
+    dut.in1.value = a
+    dut.in2.value = b
+    dut.carry_in.value = cin
+
+    await Timer(1, units="ns")
+
+    full = a + b + cin
+    mask = (1 << DATA_WID) - 1
+
+    expected_sum = full & mask
+    expected_cout = (full >> DATA_WID) & 1
+
+    dut_sum = int(dut.sum.value)
+    dut_cout = int(dut.carry_out.value)
+
+    assert dut_sum == expected_sum, (
+        f"{name} SUM FAIL: a={a:x} b={b:x} cin={cin} "
+        f"expected={expected_sum:x} got={dut_sum:x}"
+    )
+
+    assert dut_cout == expected_cout, (
+        f"{name} CARRY FAIL: expected={expected_cout} got={dut_cout}"
+    )
+
+
+# -------------------------------------------------
+# Main Cocotb Test
+# -------------------------------------------------
 @cocotb.test()
 async def test_cla_complete_validation(dut):
-    """Comprehensive CLA test"""
 
-    dut._log.info("=== STARTING CLA VALIDATION ===")
+    # Directed tests
+    await verify_add(dut, 0, 0, 0, "all_zero")
+    await verify_add(dut, 0, 0, 1, "only_carry")
+    await verify_add(dut, 1, 1, 0, "small_add")
+    await verify_add(dut, 0xFFFFFFFF, 0x0, 0, "max_plus_zero")
+    await verify_add(dut, 0xFFFFFFFF, 0x1, 0, "max_plus_one")
 
-    width = len(dut.in1)
-    mask = (1 << width) - 1
+    # Carry chain stress patterns
+    await verify_add(dut, 0xAAAAAAAA, 0x55555555, 0, "propagate_pattern")
+    await verify_add(dut, 0xFFFFFFFF, 0x00000001, 0, "carry_chain")
+    await verify_add(dut, 0x7FFFFFFF, 0x00000001, 0, "overflow_boundary")
+    await verify_add(dut, 0x80000000, 0x80000000, 0, "signed_edge")
 
-    async def verify_add(a, b, cin, tag):
+    # Random tests
+    for i in range(300):
 
-        dut.in1.value = a
-        dut.in2.value = b
-        dut.carry_in.value = cin
+        a = random.getrandbits(DATA_WID)
+        b = random.getrandbits(DATA_WID)
+        cin = random.getrandbits(1)
 
-        await Timer(1, unit="ns")
-
-        full = a + b + cin
-
-        expected_sum = full & mask
-        expected_cout = (full >> width) & 1
-
-        actual_sum = int(dut.sum.value)
-        actual_cout = int(dut.carry_out.value)
-
-        assert actual_sum == expected_sum, \
-            f"FAIL [{tag}] SUM mismatch. Expected {expected_sum}, Got {actual_sum}"
-
-        assert actual_cout == expected_cout, \
-            f"FAIL [{tag}] CARRY mismatch. Expected {expected_cout}, Got {actual_cout}"
-
-        dut._log.info(f"PASS [{tag}] -> {a} + {b} + {cin}")
+        await verify_add(dut, a, b, cin, f"random_{i}")
 
 
-    # -------------------------------------------------------------------------
-    # BASIC TESTS
-    # -------------------------------------------------------------------------
+# -------------------------------------------------
+# REQUIRED: Pytest wrapper
+# -------------------------------------------------
+def test_problem_runner():
 
-    await verify_add(10, 20, 0, "Basic_1")
+    import os
+    from cocotb_tools.runner import get_runner
 
-    await verify_add(0xFFFF, 1, 0, "Overflow")
-
-
-    # -------------------------------------------------------------------------
-    # CARRY IN TESTS (baseline usually fails here)
-    # -------------------------------------------------------------------------
-
-    await verify_add(0, 0, 1, "Only_Cin")
-
-    await verify_add(0x7FFF, 1, 1, "Cin_Boundary")
-
-
-    # -------------------------------------------------------------------------
-    # EDGE CASES
-    # -------------------------------------------------------------------------
-
-    await verify_add(0, 0, 0, "Zero")
-
-    await verify_add(mask, mask, 1, "Absolute_Max")
-
-
-    # -------------------------------------------------------------------------
-    # RANDOM STRESS TEST
-    # -------------------------------------------------------------------------
-
-    dut._log.info("Starting random stress test")
-
-    for i in range(50):
-
-        a = random.getrandbits(width)
-        b = random.getrandbits(width)
-        cin = random.randint(0, 1)
-
-        await verify_add(a, b, cin, f"Random_{i}")
-
-    dut._log.info("=== ALL TESTS COMPLETED ===")
-
-
-# =============================================================================
-# Pytest Runner
-# =============================================================================
-
-def test_cla_hidden_runner():
-    """Pytest wrapper required by HUD/cocotb_tools.runner for test discovery."""
     sim = os.getenv("SIM", "icarus")
 
     proj_path = Path(__file__).resolve().parent.parent
 
     sources = [
-        proj_path / "sources" / "cla_adder.sv",
+        proj_path / "sources/cla_adder.sv",
     ]
 
     runner = get_runner(sim)
 
     runner.build(
         sources=sources,
-        hdl_toplevel="cpu_wb_cla_adder",
+        hdl_toplevel="cla_adder",
         always=True,
     )
 
     runner.test(
-        hdl_toplevel="cpu_wb_cla_adder",
-        test_module="test_cla_hidden"
+        hdl_toplevel="cla_adder",
+        test_module="test_cla_hidden",
     )
