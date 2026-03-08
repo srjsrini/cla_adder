@@ -12,23 +12,21 @@ logic [DATA_WID-1:0] gen;
 logic [DATA_WID-1:0] pro;
 logic [DATA_WID:0] carry_tmp;
 
-// WRONG initialization (intentional bug)
-assign carry_tmp[0] = 1'b0;
+// correct initialization
+assign carry_tmp[0] = carry_in;
 
 generate
     genvar i;
     for(i = 0; i < DATA_WID; i++) begin : cla_logic
 
-        // generate
         assign gen[i] = in1[i] & in2[i];
 
-        // WRONG propagate definition
+        // ❌ subtle bug
         assign pro[i] = in1[i] ^ in2[i];
 
-        // WRONG carry equation
-        assign carry_tmp[i+1] = gen[i] | pro[i];
+        // ❌ carry propagation incomplete
+        assign carry_tmp[i+1] = gen[i] | (pro[i] & carry_tmp[i]);
 
-        // sum calculation
         assign sum[i] = in1[i] ^ in2[i] ^ carry_tmp[i];
 
     end
@@ -36,6 +34,4 @@ endgenerate
 
 assign carry_out = carry_tmp[DATA_WID];
 
-endmodule
-
-
+endmodule   

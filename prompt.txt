@@ -1,5 +1,21 @@
-Complete the implementation of the parameterized 32-bit Carry Look-Ahead (CLA) adder in sources/cla_adder.sv.
+Implement a 32-bit combinational adder using carry look-ahead logic.
 
-The module should compute the correct sum and carry_out for inputs in1, in2, and carry_in.
+The design should compute carry bits using Generate and Propagate signals
+instead of relying on ripple carry behaviour.
 
-The design should use combinational logic and operate correctly for all 32-bit input combinations.
+Inputs:
+- in1[31:0]
+- in2[31:0]
+- carry_in
+
+Outputs:
+- sum[31:0]
+- carry_out
+
+The module must be purely combinational.
+
+Avoid using the '+' operator.
+
+The carry_out should represent the final carry produced by the addition.
+
+Do not change the module interface.
