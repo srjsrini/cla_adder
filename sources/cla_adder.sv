@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module cpu_wb_cla_adder #(
+module cla_adder #(
     parameter DATA_WID = 32
 )(
     input  logic [DATA_WID-1:0] in1,
