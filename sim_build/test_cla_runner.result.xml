@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1772907522" />
+    <testcase name="test_cla_complete_validation" classname="test_cla_hidden" file="/home/suraj/cla_adder/tests/test_cla_hidden.py" lineno="13" time="0.031919240951538086" sim_time_ns="56.0" ratio_time="1754.4276847003637" />
+  </testsuite>
+</testsuites>

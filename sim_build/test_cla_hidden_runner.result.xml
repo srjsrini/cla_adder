@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1772907624" />
+    <testcase name="test_cla_complete_validation" classname="test_cla_hidden" file="/home/suraj/cla_adder/tests/test_cla_hidden.py" lineno="13" time="0.0012309551239013672" sim_time_ns="1.0" ratio_time="812.3773000193686">
+      <failure error_type="ValueError" error_msg="Can't convert LogicArray to int: it contains non-0/1 values" />
+    </testcase>
+  </testsuite>
+</testsuites>
